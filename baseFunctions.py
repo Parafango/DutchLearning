@@ -20,3 +20,31 @@ def getRandomRow():
     randomN = random.randrange(0,nRows)
     randomRow = df.iloc[randomN]
     return randomRow
+
+def getWordType(row):
+    if pd.isna(row['count']):
+        isAdjective = 1
+    else:
+        isAdjective = 0
+    return isAdjective
+
+
+def guessWordTranslation(row, gamemode):
+    isAdjective = getWordType(row)
+    if gamemode:
+        prompt = '"' + row['dutch'] + '" in english is: '
+    else:
+        word = row['english']
+        if isAdjective:
+            word = word + ' (' + row['gender'] + ')'
+        else:
+            word = '"the ' + word + '"'
+
+        prompt = word + ' in dutch is: '
+
+    guess = input(prompt)
+    return guess
+
+def checkWordTranslation(guess):
+    pass
+

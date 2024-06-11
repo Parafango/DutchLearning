@@ -1,5 +1,4 @@
-import numpy as np
-import pandas as pd
+from baseFunctions import *
 
 
 #select gamemode
@@ -8,5 +7,10 @@ import pandas as pd
 #answer check
 #repeat
 
-if __name__=='main':
-    pass
+if __name__ == '__main__':
+    gamemode = gamemodeSelection()
+    randomRow = getRandomRow()
+    guess = guessWordTranslation(randomRow, gamemode)
+    checkWordTranslation(guess)
+
+
