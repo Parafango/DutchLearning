@@ -11,6 +11,6 @@ if __name__ == '__main__':
     gamemode = gamemodeSelection()
     randomRow = getRandomRow()
     guess = guessWordTranslation(randomRow, gamemode)
-    checkWordTranslation(guess)
+    checkWordTranslation(guess, randomRow, gamemode)
 
 
