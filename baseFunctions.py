@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import random
 
 def gamemodeSelection():
@@ -12,13 +13,28 @@ def gamemodeSelection():
     gamemode = gamemodeChoices[gamemodeSelected]
     return gamemode
 
-
-def getRandomRow():
+def getInitialWeights():
     df = pd.read_csv('DuolingoWords.csv')
     nRows = df.shape[0]
-    randomN = random.randrange(0,nRows)
+    initialWeights = np.ones(nRows) * 4
+    return initialWeights
+
+def adjustWeights(rowWeights, randomRow, delta):
+    df = pd.read_csv('DuolingoWords.csv')
+    randomN = df.index[df['english']==randomRow['english'] & df['gender']==randomRow['gender']].tolist()
+    if delta == 0:
+        rowWeights[randomN] = rowWeights[randomN] - 1
+    else:
+        rowWeights[randomN] = rowWeights[randomN] + 1
+
+    return rowWeights
+
+def getRandomRow(rowWeights):
+    df = pd.read_csv('DuolingoWords.csv')
+    nRows = df.shape[0]
+    randomN = random.choices(np.arange(nRows), rowWeights, k=1)[0]
     randomRow = df.iloc[randomN]
-    return randomRow
+    return randomRow, rowWeights
 
 def getWordType(row):
     if pd.isna(row['count']):
