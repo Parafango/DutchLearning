@@ -65,10 +65,12 @@ def getCorrectGuess(row, gamemode):
     return correctGuess
 
 
-def checkWordTranslation(guess, row, gamemode):
+def checkWordTranslation(guess, row, gamemode, nLives):
     correctGuess = getCorrectGuess(row, gamemode)
     if guess == correctGuess:
         print('Correct!')
     else:
         print('Wrong, the correct translation was:"' + correctGuess + '"')
+        nLives = nLives - 1
 
+    return nLives

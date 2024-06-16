@@ -8,9 +8,18 @@ from baseFunctions import *
 #repeat
 
 if __name__ == '__main__':
+    nLives = 5
+
     gamemode = gamemodeSelection()
-    randomRow = getRandomRow()
-    guess = guessWordTranslation(randomRow, gamemode)
-    checkWordTranslation(guess, randomRow, gamemode)
+    print('Have fun! Type "stop" at any time to interrupt game')
+
+    while nLives>0:
+        randomRow = getRandomRow()
+        guess = guessWordTranslation(randomRow, gamemode)
+        if guess == 'stop':
+            print('Thanks for playing!')
+            break
+
+        nLives = checkWordTranslation(guess, randomRow, gamemode, nLives)
 
 
