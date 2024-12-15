@@ -1,4 +1,4 @@
-from betterFunctions import *
+from DutchLearning.functions.betterFunctions import *
 
 source = 'DuolingoWords.csv'
 

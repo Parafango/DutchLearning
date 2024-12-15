@@ -132,3 +132,9 @@ class DutchGame:
         self.stop = stopGame
 
 
+#Taking words info and translation from internet
+#Step 1: Find a list of most commonly used dutch words and randomly take one of them
+#Step 2: Use dutch dictionary to find out the translation and its type
+#Step 2a: go to the word page in dutch dictionary
+#Step 2b: extract info like different translations of the word (all of them should be correct) and type
+#ie noun (neuter or gendered as well), adjective, adverb

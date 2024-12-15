@@ -1,4 +1,4 @@
-from baseFunctions import *
+from DutchLearning.functions.baseFunctions import *
 
 
 if __name__ == '__main__':

@@ -17,13 +17,13 @@ def gamemodeSelection() -> int:
     return gamemode
 
 def getInitialWeights() -> np.ndarray:
-    df = pd.read_csv('DuolingoWords.csv')
+    df = pd.read_csv('../lookupData/DuolingoWords.csv')
     nRows = df.shape[0]
     initialWeights = np.ones(nRows) * 4
     return initialWeights
 
 def adjustWeights(rowWeights: np.ndarray, randomRow: pandas.core.series.Series, delta: int) -> np.ndarray:
-    df = pd.read_csv('DuolingoWords.csv')
+    df = pd.read_csv('../lookupData/DuolingoWords.csv')
     randomN = df.index[(df['english']==randomRow['english']) & (df['gender']==randomRow['gender'])].tolist()
     if delta == 0:
         rowWeights[randomN] = rowWeights[randomN] - 1
@@ -33,7 +33,7 @@ def adjustWeights(rowWeights: np.ndarray, randomRow: pandas.core.series.Series, 
     return rowWeights
 
 def getRandomRow(rowWeights: np.ndarray) -> (pd.core.series.Series, np.ndarray):
-    df = pd.read_csv('DuolingoWords.csv')
+    df = pd.read_csv('../lookupData/DuolingoWords.csv')
     nRows = df.shape[0]
     randomN = random.choices(np.arange(nRows), rowWeights, k=1)[0]
     randomRow = df.iloc[randomN]
