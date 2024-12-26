@@ -32,10 +32,9 @@ while running:
     pygame.draw.rect(screen, "white", truck.rect)
 
     keys = pygame.key.get_pressed()
-    player.update_position(keys, dt)
+    player.movement(keys, dt, screen)
+    truck.movement(dt, screen)
 
-    truck.rect = truck.rect.move(truck.velocity * dt)
-    truck.reset_if_outofbounds(screen)
     player = truck.simulate_crash(player)
     # flip() the display to put your work on screen
     pygame.display.flip()

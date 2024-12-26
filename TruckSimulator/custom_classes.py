@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
 
+
 class Player():
     def __init__(self, pos, radius, speed):
         self.pos = pos
@@ -21,18 +22,34 @@ class Player():
             if not is_moving:
                 self.velocity = np.asarray([0, 0])
             else:
-                #TODO: fix original component not getting updated if another key is pressed before
-                #the original one is released
+                #set velocity to zero to erase previous frame values
+                self.velocity = np.asarray([0, 0])
                 if keys[pygame.K_w]:
-                    self.velocity[1] = - self.speed
+                    self.velocity[1] = self.velocity[1] - self.speed
                 if keys[pygame.K_s]:
-                    self.velocity[1] = self.speed
+                    self.velocity[1] = self.velocity[1] + self.speed
                 if keys[pygame.K_a]:
-                    self.velocity[0] = - self.speed
+                    self.velocity[0] = self.velocity[0] - self.speed
                 if keys[pygame.K_d]:
-                    self.velocity[0] = self.speed
+                    self.velocity[0] = self.velocity[0] + self.speed
 
         self.pos += self.velocity * dt
+
+    def reset_if_outofbounds(self, screen: pygame.Surface):
+        if self.pos[0] - self.radius > screen.get_width():
+            self.pos[0] = -self.radius
+        if self.pos[0] + self.radius < 0:
+            self.pos[0] = screen.get_width() + self.radius
+        if self.pos[1] - self.radius > screen.get_height():
+            self.pos[1] = - self.radius
+        if self.pos[1] + self.radius < 0:
+            self.pos[1] = screen.get_height() + self.radius
+
+    def movement(self, keys, dt, screen: pygame.Surface):
+        self.update_position(keys, dt)
+        self.reset_if_outofbounds(screen)
+
+
 
 class Truck():
     def __init__(self, lefttop, wh, speed):
@@ -42,7 +59,10 @@ class Truck():
         self.speed = speed
         self.velocity = np.asarray([-speed, 0])
 
-    def reset_if_outofbounds(self, screen):
+    def update_position(self, dt):
+        self.rect.move_ip(self.velocity * dt)
+
+    def reset_if_outofbounds(self, screen: pygame.Surface):
         if self.rect.right < 0:
             self.rect.move_ip(screen.get_width() + self.rect.w, 0)
         if self.rect.left > screen.get_width():
@@ -51,6 +71,10 @@ class Truck():
             self.rect.move_ip(0, screen.get_height() + self.rect.h)
         if self.rect.top > screen.get_height():
             self.rect.move_ip(0, -screen.get_height() - self.rect.h)
+
+    def movement(self, dt, screen: pygame.Surface):
+        self.update_position(dt)
+        self.reset_if_outofbounds(screen)
 
     def simulate_crash(self, player: Player):
         collision_coord = self.detect_collision(player)
@@ -80,6 +104,7 @@ class Truck():
             return  circum_coord[:, idxs[0]]
 
     def get_crash_speed(self, player: Player, collision_coord: np.ndarray):
+        #TODO: calculate speed based on physics, change truck speed as well
         center_x = self.rect.left + self.rect.w / 2
         center_y = self.rect.top + self.rect.h / 2
         angle = np.arctan2((collision_coord[1] - center_y), (collision_coord[0] - center_x))
