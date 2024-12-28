@@ -11,12 +11,14 @@ dt = 0
 #initialize truck and player instances
 player_radius = 30
 player_speed = 300
-player_pos = [screen.get_width() / 2, screen.get_height()]
-player = Player(player_pos, player_radius, player_speed)
+player_mass = 70
+player_pos = [int(screen.get_width() / 2), int(screen.get_height())]
+player = Player(player_pos, player_radius, player_speed, player_mass)
 truck_size = [80, 40]
 truck_speed = 150
+truck_mass = 6000
 truck_lefttop = [screen.get_width() - truck_size[0], screen.get_height()/2]
-truck = Truck(truck_lefttop, truck_size, truck_speed)
+truck = Truck(truck_lefttop, truck_size, truck_speed, truck_mass)
 
 while running:
     # poll for events
@@ -38,7 +40,6 @@ while running:
     player = truck.simulate_crash(player)
     # flip() the display to put your work on screen
     pygame.display.flip()
-
     # limits FPS to 60
     # dt is delta time in seconds since last frame, used for framerate-
     # independent physics.
@@ -49,3 +50,6 @@ pygame.quit()
 
 
 
+#TODO:
+#substitute player with rectangle to enable smooth wrapping
+#substitute rectangles with sprites
