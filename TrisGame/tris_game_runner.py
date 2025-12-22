@@ -25,6 +25,7 @@ class TrisGameRunner():
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     self.update_grid(event, grid, states, screen)
 
+            self.check_game_status(grid, states, screen)
             # limits FPS to 60
             # dt is delta time in seconds since last frame, used for framerate-
             # independent physics.
@@ -109,4 +110,41 @@ class TrisGameRunner():
         else:
             return None
 
+    def check_game_status(self, grid:TrisGrid, states: GameStates, screen):
+        winner = self.check_win_conditions(grid, states)
+        if winner is not None:
+            self.display_win_screen(screen, winner)
 
+
+    def check_win_conditions(self, grid:TrisGrid, states: GameStates):
+        oblique_sum1 = grid.grid_values[0,0] + grid.grid_values[1,1] + grid.grid_values[2,2]
+        oblique_sum2 = grid.grid_values[0,2] + grid.grid_values[1,1] + grid.grid_values[2,0]
+
+        h_sum = np.sum(grid.grid_values, axis=1)
+        v_sum = np.sum(grid.grid_values, axis=0)
+
+        p1_win_value = 3
+        p2_win_value = -3
+        if (any(h_sum==p1_win_value) or any(v_sum==p1_win_value) or
+                (oblique_sum1==p1_win_value) or (oblique_sum2==p1_win_value)):
+            states.score[0] += 1
+            return 1
+        elif (any(h_sum == p2_win_value) or any(v_sum == p2_win_value) or
+              (oblique_sum1 == p2_win_value) or (oblique_sum2 == p2_win_value)):
+            states.score[1] += 1
+            return 2
+        else:
+            return None
+
+    def display_win_screen(self, screen: pygame.Surface, winner):
+        width = int(screen.get_width())/3
+        height = int(screen.get_height())/3
+        win_rect = pygame.Rect(width, height, width, height)
+        pygame.draw.rect(screen, color='black', rect=win_rect)
+        pygame.draw.rect(screen, color='white', rect=win_rect, width=4)
+        font = pygame.font.Font(None, 64)
+        win_text = f'Player {winner} wins!'
+        win_surf = font.render(win_text, True, 'white')
+        win_surf_rect = win_surf.get_rect(center=(width * 3 / 2, height * 3 / 2))
+        screen.blit(win_surf, win_surf_rect)
+        pygame.display.flip()

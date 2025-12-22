@@ -20,6 +20,7 @@ class TrisGrid(Rect):
 class GameStates():
     def __init__(self):
         self.turn_count = 0
+        self.score = np.zeros((2,1))
 
     def determine_turn(self):
         if self.turn_count % 2 == 0:
