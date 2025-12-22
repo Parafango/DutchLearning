@@ -1,0 +1,14 @@
+features:
+- per ora un solo round
+- simboli default 1 x 2 o
+-
+
+architettura:
+- tris_game
+    - tris_game_runner: pygame generale
+        - game loop:
+            - scegli casella
+            - check condizioni vittoria
+        - se vinci stampa a schermo vittoria
+
+
