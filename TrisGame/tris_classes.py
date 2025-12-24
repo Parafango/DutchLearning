@@ -24,6 +24,7 @@ class GameStates():
         self.score = np.zeros((2,1))
         self.replay_selector = ReplaySelector()
         self.restart_game = False
+        self.quit_game = False
 
     def determine_turn(self):
         if self.turn_count % 2 == 0:

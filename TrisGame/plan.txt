@@ -10,5 +10,9 @@ architettura:
             - scegli casella
             - check condizioni vittoria
         - se vinci stampa a schermo vittoria
+        - seleziona se giocare ancora tramite tastiera
+        - punteggio a lato dello schermo
 
+to add:
+- logica computer
 

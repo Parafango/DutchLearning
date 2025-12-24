@@ -3,7 +3,7 @@ import sys
 import pygame
 import numpy as np
 from tris_classes import TrisGrid, GameStates
-
+import time
 
 class TrisGameRunner():
     def __init__(self, config):
@@ -28,6 +28,10 @@ class TrisGameRunner():
             if states.restart_game:
                 grid = self.restart_game(screen)
                 states.reset_states()
+
+            if states.quit_game:
+                self.quit_screen(screen)
+                running = False
             # limits FPS to 60
             # dt is delta time in seconds since last frame, used for framerate-
             # independent physics.
@@ -128,6 +132,8 @@ class TrisGameRunner():
                         if event.key == pygame.K_RETURN:
                             if states.replay_selector.selected_value == 'y':
                                 states.restart_game = True
+                            elif states.replay_selector.selected_value == 'n':
+                                states.quit_game = True
                             new_game_unselected = False
 
     def check_win_conditions(self, grid:TrisGrid, states: GameStates):
@@ -191,3 +197,22 @@ class TrisGameRunner():
     def restart_game(self, screen: pygame.Surface):
         grid = self.paint_grid(screen)
         return grid
+
+    def quit_screen(self, screen: pygame.Surface):
+        screen.fill('black')
+        fontsize = 40
+        width = int(screen.get_width())/3
+        height = int(screen.get_height())/3
+        win_rect = pygame.Rect(width, height, width, height)
+        pygame.draw.rect(screen, color='black', rect=win_rect)
+        pygame.draw.rect(screen, color='white', rect=win_rect, width=4)
+        font = pygame.font.Font(None, fontsize)
+        win_text = 'Thanks for playing!'
+        label = font.render(win_text, True, 'white')
+
+        center_rect = label.get_rect(center=(width * 3 / 2, height * 3 / 2))
+        screen.blit(label, center_rect)
+
+        pygame.display.flip()
+
+        time.sleep(4)
