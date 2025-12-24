@@ -2,6 +2,8 @@ import sys
 
 import pygame
 import numpy as np
+
+from TrisGame.tris_classes import BasicDisplayer, WinDisplayer
 from tris_classes import TrisGrid, GameStates
 import time
 
@@ -74,16 +76,17 @@ class TrisGameRunner():
     def check_game_status(self, grid:TrisGrid, states: GameStates, screen):
         winner = self.check_win_conditions(grid, states)
         if winner is not None:
-            coords, font = self.display_win_screen(screen, winner, states)
+            states.last_winner = winner
+            states.score[winner-1] += 1
+            win_displayer = WinDisplayer(screen, states, 40)
+            win_displayer.display_win_screen()
             new_game_unselected = True
             while new_game_unselected:
                 for event in pygame.event.get():
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                            states.replay_selector.switch_selection()
-                            x_pos = states.replay_selector.get_x_replay_pos(font, coords[0][0])
-                            self.display_win_screen(screen, winner, states) #to erase previous line if any
-                            self.paint_selector_line(screen, [x_pos, coords[1]])
+                            win_displayer.switch_selector_line()
+                            win_displayer.paint_selector_line()
                         if event.key == pygame.K_RETURN:
                             if states.replay_selector.selected_value == 'y':
                                 states.restart_game = True
