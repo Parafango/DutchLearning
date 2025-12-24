@@ -17,6 +17,50 @@ class TrisGrid(Rect):
         else:
             sys.exit("Something went wrong")
 
+    def check_click_grid(self, pos, states: 'GameStates'):
+        x_click = pos[0]
+        y_click = pos[1]
+        x_within = self.right > x_click > self.left
+        y_within = self.bottom > y_click > self.top
+        if x_within and y_within:
+            for i in range(3):
+                x_square = self.left + self.unit_size * i
+                if x_square + self.unit_size > x_click > x_square:
+                    break
+
+            for j in range(3):
+                y_square = self.top + self.unit_size * j
+                if y_square + self.unit_size > y_click > y_square:
+                    break
+
+            turn_symbol = states.determine_turn()
+            value = self.map_symbol_to_value(turn_symbol)
+            if self.grid_values[i,j] == 0:
+                self.grid_values[i,j] = value
+            else:
+                return None
+            coords = (i,j)
+            return coords
+        else:
+            return None
+
+    def draw_symbol(self, coords, states:'GameStates', screen: pygame.Surface):
+        x_center = coords[0] * self.unit_size + self.unit_size/2 + self.left
+        y_center = coords[1] * self.unit_size + self.unit_size / 2 + self.top
+        if states.determine_turn() == 'x':
+            x_left = x_center - self.unit_size * 2 / 6
+            x_right = x_center + self.unit_size * 2 / 6
+            y_top = y_center + self.unit_size * 2 / 6
+            y_bottom = y_center +-self.unit_size * 2 / 6
+            pygame.draw.line(screen, 'white',(x_left, y_top), (x_right, y_bottom), width=4)
+            pygame.draw.line(screen, 'white', (x_right, y_top), (x_left, y_bottom), width=4)
+        elif states.determine_turn() == 'o':
+            radius = self.unit_size * 2/6
+            pygame.draw.circle(screen, 'white',(x_center,y_center), radius)
+        else:
+            sys.exit('Something went wrong')
+        pygame.display.flip()
+
 
 class GameStates():
     def __init__(self):

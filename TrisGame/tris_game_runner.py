@@ -66,55 +66,10 @@ class TrisGameRunner():
     def update_grid(self, click_event: pygame.event.Event, grid: TrisGrid, states: GameStates, screen: pygame.Surface):
         pos = click_event.pos
 
-        coords = self.check_click_grid(pos, grid, states)
+        coords = grid.check_click_grid(pos, states)
         if coords is not None:
-            self.draw_symbol(coords, states, grid, screen)
+            grid.draw_symbol(coords, states, screen)
             states.turn_count += 1
-
-
-    def draw_symbol(self, coords, states:GameStates, grid:TrisGrid, screen: pygame.Surface):
-        x_center = coords[0] * grid.unit_size + grid.unit_size/2 + grid.left
-        y_center = coords[1] * grid.unit_size + grid.unit_size / 2 + grid.top
-        if states.determine_turn() == 'x':
-            x_left = x_center - grid.unit_size * 2 / 6
-            x_right = x_center + grid.unit_size * 2 / 6
-            y_top = y_center + grid.unit_size * 2 / 6
-            y_bottom = y_center +-grid.unit_size * 2 / 6
-            pygame.draw.line(screen, 'white',(x_left, y_top), (x_right, y_bottom), width=4)
-            pygame.draw.line(screen, 'white', (x_right, y_top), (x_left, y_bottom), width=4)
-        elif states.determine_turn() == 'o':
-            radius = grid.unit_size * 2/6
-            pygame.draw.circle(screen, 'white',(x_center,y_center), radius)
-        else:
-            sys.exit('Something went wrong')
-        pygame.display.flip()
-
-    def check_click_grid(self, pos, grid: TrisGrid, states: GameStates):
-        x_click = pos[0]
-        y_click = pos[1]
-        x_within = grid.right > x_click > grid.left
-        y_within = grid.bottom > y_click > grid.top
-        if x_within and y_within:
-            for i in range(3):
-                x_square = grid.left + grid.unit_size * i
-                if x_square + grid.unit_size > x_click > x_square:
-                    break
-
-            for j in range(3):
-                y_square = grid.top + grid.unit_size * j
-                if y_square + grid.unit_size > y_click > y_square:
-                    break
-
-            turn_symbol = states.determine_turn()
-            value = grid.map_symbol_to_value(turn_symbol)
-            if grid.grid_values[i,j] == 0:
-                grid.grid_values[i,j] = value
-            else:
-                return None
-            coords = (i,j)
-            return coords
-        else:
-            return None
 
     def check_game_status(self, grid:TrisGrid, states: GameStates, screen):
         winner = self.check_win_conditions(grid, states)

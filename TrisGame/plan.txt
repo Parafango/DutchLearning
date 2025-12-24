@@ -14,5 +14,12 @@ architettura:
         - punteggio a lato dello schermo
 
 to add:
-- logica computer
-
+- logica computer:
+    - se avversario ha 2/3 caselle contigue --> bloccare vittoria
+    - altrimenti random (v0)
+    - altrimenti (v1):
+        - se 0 caselle prese --> random
+        - se 1 casella presa --> aggiungere segno in casella contigua in 'direzione libera'
+        - se 2 caselle prese --> cercare di vincere
+    - altrimenti (v2):
+        - v1 + trappole
