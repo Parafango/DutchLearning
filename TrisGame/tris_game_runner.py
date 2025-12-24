@@ -20,12 +20,14 @@ class TrisGameRunner():
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    print(grid.grid_values)
                     running = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     self.update_grid(event, grid, states, screen)
 
             self.check_game_status(grid, states, screen)
+            if states.restart_game:
+                grid = self.restart_game(screen)
+                states.reset_states()
             # limits FPS to 60
             # dt is delta time in seconds since last frame, used for framerate-
             # independent physics.
@@ -113,8 +115,20 @@ class TrisGameRunner():
     def check_game_status(self, grid:TrisGrid, states: GameStates, screen):
         winner = self.check_win_conditions(grid, states)
         if winner is not None:
-            self.display_win_screen(screen, winner)
-
+            coords, font = self.display_win_screen(screen, winner, states)
+            new_game_unselected = True
+            while new_game_unselected:
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                            states.replay_selector.switch_selection()
+                            x_pos = states.replay_selector.get_x_replay_pos(font, coords[0][0])
+                            self.display_win_screen(screen, winner, states) #to erase previous line if any
+                            self.paint_selector_line(screen, [x_pos, coords[1]])
+                        if event.key == pygame.K_RETURN:
+                            if states.replay_selector.selected_value == 'y':
+                                states.restart_game = True
+                            new_game_unselected = False
 
     def check_win_conditions(self, grid:TrisGrid, states: GameStates):
         oblique_sum1 = grid.grid_values[0,0] + grid.grid_values[1,1] + grid.grid_values[2,2]
@@ -136,15 +150,44 @@ class TrisGameRunner():
         else:
             return None
 
-    def display_win_screen(self, screen: pygame.Surface, winner):
+    def display_win_screen(self, screen: pygame.Surface, winner, states: GameStates):
+        fontsize = 40
         width = int(screen.get_width())/3
         height = int(screen.get_height())/3
         win_rect = pygame.Rect(width, height, width, height)
         pygame.draw.rect(screen, color='black', rect=win_rect)
         pygame.draw.rect(screen, color='white', rect=win_rect, width=4)
-        font = pygame.font.Font(None, 64)
-        win_text = f'Player {winner} wins!'
-        win_surf = font.render(win_text, True, 'white')
-        win_surf_rect = win_surf.get_rect(center=(width * 3 / 2, height * 3 / 2))
-        screen.blit(win_surf, win_surf_rect)
+        font = pygame.font.Font(None, fontsize)
+        win_text = [f'Player {winner} wins!',
+                    'Play again?',
+                    'Yes    No']
+        label = []
+        for line in win_text:
+            label.append(font.render(line, True, 'white'))
+        y_start = height + 15 * 3
+        for line in range(len(label)):
+            center_rect = label[line].get_rect(center=(width * 3 / 2, y_start + line * fontsize + 15 * line))
+            screen.blit(label[line], center_rect)
+
+        y_end = y_start + line * fontsize + 15 * line + fontsize / 2
+
+        x_start = width * 3 / 2 - font.size(win_text[-1])[0] / 2
+        x_pos = states.replay_selector.get_x_replay_pos(font, x_start)
+
+        pygame.draw.line(screen, 'white', (x_pos[0], y_end), (x_pos[1], y_end), width=2)
         pygame.display.flip()
+
+        coords = [x_pos, y_end]
+        return coords, font
+
+    def paint_selector_line(self, screen: pygame.Surface, coords):
+        x_pos = coords[0]
+        y_end = coords[1]
+        #draw selector line
+        pygame.draw.line(screen, 'white', (x_pos[0], y_end), (x_pos[1], y_end), width=2)
+        pygame.display.flip()
+        return
+
+    def restart_game(self, screen: pygame.Surface):
+        grid = self.paint_grid(screen)
+        return grid
