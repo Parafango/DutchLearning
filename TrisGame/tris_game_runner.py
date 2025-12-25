@@ -3,7 +3,7 @@ import sys
 import pygame
 import numpy as np
 
-from TrisGame.tris_classes import BasicDisplayer, WinDisplayer
+from TrisGame.tris_classes import BasicDisplayer, WinDisplayer, ScoreDisplayer
 from tris_classes import TrisGrid, GameStates
 import time
 
@@ -19,6 +19,7 @@ class TrisGameRunner():
         dt = 0
         grid = self.paint_grid(screen)
         states = GameStates()
+        score_displayer = ScoreDisplayer(screen, states, 40)
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -26,7 +27,7 @@ class TrisGameRunner():
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     self.update_grid(event, grid, states, screen)
 
-            self.check_game_status(grid, states, screen)
+            self.check_game_status(grid, states, screen, score_displayer)
             if states.restart_game:
                 grid = self.restart_game(screen)
                 states.reset_states()
@@ -73,11 +74,13 @@ class TrisGameRunner():
             grid.draw_symbol(coords, states, screen)
             states.turn_count += 1
 
-    def check_game_status(self, grid:TrisGrid, states: GameStates, screen):
+    def check_game_status(self, grid:TrisGrid, states: GameStates, screen, score_displayer: ScoreDisplayer):
         winner = self.check_win_conditions(grid, states)
+        score_displayer.update_score(states)
+        score_displayer.paint_score()
         if winner is not None:
             states.last_winner = winner
-            states.score[winner-1] += 1
+            grid.reset_values()
             win_displayer = WinDisplayer(screen, states, 40)
             win_displayer.display_win_screen()
             new_game_unselected = True

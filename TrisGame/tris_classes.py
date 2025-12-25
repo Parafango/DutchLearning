@@ -61,6 +61,8 @@ class TrisGrid(Rect):
             sys.exit('Something went wrong')
         pygame.display.flip()
 
+    def reset_values(self):
+        self.grid_values = np.zeros((3,3))
 
 class GameStates():
     def __init__(self):
@@ -163,3 +165,33 @@ class WinDisplayer(BasicDisplayer):
     def switch_selector_line(self):
         self.states.replay_selector.switch_selection()
         self.line_selector_coords[0] = self.states.replay_selector.get_x_replay_pos(self.font, self.line_selector_x_start)
+
+class ScoreDisplayer(BasicDisplayer):
+    def __init__(self, screen:pygame.Surface, states:GameStates, fontsize):
+        super().__init__(screen, states, fontsize)
+        self.score = states.score
+
+    def update_score(self, states: GameStates):
+        self.score = states.score
+
+    def paint_score(self):
+        width = int(self.screen.get_width())
+        self.font = pygame.font.Font(None, self.fontsize)
+        score1 = int((self.score[0][0]))
+        score2 = int((self.score[1][0]))
+
+        size1 = self.font.size(str(score1))
+        size2 = self.font.size(str(score2))
+
+        rect_sx = Rect((0,0), size1)
+        rect_dx = Rect((width - size2[0],0), size2)
+
+        score1 = self.font.render(f'{score1}', True, 'white')
+        score2 = self.font.render(f'{score2}', True, 'white')
+
+        self.screen.fill('black', rect_sx)
+        self.screen.blit(score1, (0, 0))
+        self.screen.fill('black', rect_dx)
+        self.screen.blit(score2, (width-size2[0], 0))
+
+        pygame.display.flip()
