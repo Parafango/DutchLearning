@@ -17,9 +17,8 @@ class TrisGameRunner():
         clock = pygame.time.Clock()
         running = True
         dt = 0
-        grid = self.paint_grid(screen)
-        states = GameStates()
-        score_displayer = ScoreDisplayer(screen, states, 40)
+        grid, states = self.start_game(screen)
+        score_displayer = ScoreDisplayer(screen, states, None)
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -33,7 +32,7 @@ class TrisGameRunner():
                 states.reset_states()
 
             if states.quit_game:
-                self.quit_screen(screen)
+                self.quit_screen(screen, states)
                 running = False
             # limits FPS to 60
             # dt is delta time in seconds since last frame, used for framerate-
@@ -81,7 +80,7 @@ class TrisGameRunner():
         if winner is not None:
             states.last_winner = winner
             grid.reset_values()
-            win_displayer = WinDisplayer(screen, states, 40)
+            win_displayer = WinDisplayer(screen, states, None)
             win_displayer.display_win_screen()
             new_game_unselected = True
             while new_game_unselected:
@@ -118,7 +117,7 @@ class TrisGameRunner():
             return None
 
     def display_win_screen(self, screen: pygame.Surface, winner, states: GameStates):
-        fontsize = 40
+        fontsize = states.game_options.fontsize
         width = int(screen.get_width())/3
         height = int(screen.get_height())/3
         win_rect = pygame.Rect(width, height, width, height)
@@ -159,9 +158,9 @@ class TrisGameRunner():
         grid = self.paint_grid(screen)
         return grid
 
-    def quit_screen(self, screen: pygame.Surface):
+    def quit_screen(self, screen: pygame.Surface, states: GameStates):
         screen.fill('black')
-        fontsize = 40
+        fontsize = states.game_options.fontsize
         width = int(screen.get_width())/3
         height = int(screen.get_height())/3
         win_rect = pygame.Rect(width, height, width, height)
@@ -177,3 +176,40 @@ class TrisGameRunner():
         pygame.display.flip()
 
         time.sleep(4)
+
+    def start_game(self, screen):
+        states = GameStates()
+        mode_selection_message = ['Welcome to Tris!',
+                                  'Which mode do you want to play?',
+                                  '1vs1    1vsCPU']
+        #greet
+        screen.fill('black')
+        pygame.display.flip()
+
+        #pick rect size
+        w = int(screen.get_width())/2
+        h = int(screen.get_height())/2
+        displayer_rect = pygame.Rect(w/2,h/2,w,h)
+        gamemode_displayer = BasicDisplayer(screen, states, displayer_rect)
+        gamemode_displayer.display_choice_screen(mode_selection_message)
+        gamemode_unselected = True
+        while gamemode_unselected:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                        gamemode_displayer.update_choice_screen(mode_selection_message[-1], event.key)
+                    if event.key == pygame.K_RETURN:
+                        if gamemode_displayer.selected_option == 0:
+                            states.game_options.gamemode = '1vs1'
+                        elif gamemode_displayer.selected_option == 1:
+                            states.game_options.gamemode = '1vsCPU'
+                        gamemode_unselected = False
+
+        #choose gamemode
+            #display choice screen
+            #interact with player through key to move selection
+            #save choice from selector_postion
+
+        grid = self.paint_grid(screen)
+
+        return grid, states

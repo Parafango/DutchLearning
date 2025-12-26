@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import pygame
 from pygame import Rect
 import numpy as np
@@ -64,6 +66,12 @@ class TrisGrid(Rect):
     def reset_values(self):
         self.grid_values = np.zeros((3,3))
 
+class GameOptions():
+    def __init__(self):
+        self.gamemode = 0 #0 is 1v1, 1 is vs CPU
+        self.fontsize = 40
+
+
 class GameStates():
     def __init__(self):
         self.turn_count = 0
@@ -72,6 +80,7 @@ class GameStates():
         self.restart_game = False
         self.quit_game = False
         self.last_winner = None
+        self.game_options = GameOptions()
 
     def determine_turn(self):
         if self.turn_count % 2 == 0:
@@ -111,15 +120,78 @@ class ReplaySelector():
             self.selected_value = 'y'
 
 class BasicDisplayer():
-    def __init__(self, screen: pygame.Surface, states: GameStates, fontsize):
+    def __init__(self, screen: pygame.Surface, states: GameStates, subscreen_rect: pygame.Rect):
         self.screen = screen
         self.states = states
-        self.fontsize = fontsize
+        self.fontsize = states.game_options.fontsize
+        self.subscreen_rect = subscreen_rect
         self.font = None
+        self.selected_option = None
+        self.selectable_positions = None
+        self.selector_thickness = None
+        self.options_dimensions = None
+
+    def display_choice_screen(self, message):
+        #draw subscreen
+        pygame.draw.rect(self.screen, color='black', rect=self.subscreen_rect)
+        pygame.draw.rect(self.screen, color='white', rect=self.subscreen_rect, width=4)
+
+        self.font = pygame.font.Font(None, self.fontsize)
+        font_height = self.font.size('Y')[1]
+
+        label = []
+        for line in message:
+            label.append(self.font.render(line, True, 'white'))
+
+        y = self.subscreen_rect.top + font_height
+        for i in range(len(label)):
+            center_rect = label[i].get_rect(center=(self.subscreen_rect.center[0], y))
+            self.screen.blit(label[i], center_rect)
+            y = y + 3 * font_height
+
+        y_end = y - 5/2 * font_height
+
+        self.selector_thickness = 2
+        selected_position = (self.subscreen_rect.center[0] - self.font.size(message[-1])[0] / 2, y_end)
+        text_handler = TextHandler(self.font, message[-1], selected_position)
+        self.selectable_positions, self.options_dimensions = text_handler.get_start_positions()
+
+        self.selected_option = 0
+        first_option = (message[-1]).split(' ')[0]
+        x_start = selected_position[0]
+        x_end = x_start + self.font.size(first_option)[0]
+
+        pygame.draw.line(self.screen, 'white', (x_start, y_end), (x_end, y_end), width=self.selector_thickness)
+
+        pygame.display.flip()
+
+
+
+    def update_choice_screen(self, choice_line, key_action):
+        pos_change = 0
+        if key_action == pygame.K_LEFT:
+            pos_change = -1
+        elif key_action == pygame.K_RIGHT:
+            pos_change = 1
+
+        self.selected_option = (self.selected_option + pos_change) % len(self.selectable_positions)
+        selected_position = self.selectable_positions[self.selected_option]
+
+        line_dim = self.font.size(choice_line)[0]
+        selected_rect = Rect(self.selectable_positions[0][0], self.selectable_positions[0][1],
+                             line_dim, self.selector_thickness)
+        self.screen.fill('black', selected_rect)
+        x_start = selected_position[0]
+        x_end = x_start + self.options_dimensions[self.selected_option][0]
+        y = selected_position[1]
+        pygame.draw.line(self.screen, 'white', (x_start, y), (x_end, y))
+        pygame.display.flip()
+
+
 
 class WinDisplayer(BasicDisplayer):
-    def __init__(self, screen: pygame.Surface, states: GameStates, fontsize):
-        super().__init__(screen, states, fontsize)
+    def __init__(self, screen: pygame.Surface, states: GameStates, subscreen_rect):
+        super().__init__(screen, states, subscreen_rect)
         self.line_selector_coords = None
         self.line_selector_x_start = None
 
@@ -167,8 +239,8 @@ class WinDisplayer(BasicDisplayer):
         self.line_selector_coords[0] = self.states.replay_selector.get_x_replay_pos(self.font, self.line_selector_x_start)
 
 class ScoreDisplayer(BasicDisplayer):
-    def __init__(self, screen:pygame.Surface, states:GameStates, fontsize):
-        super().__init__(screen, states, fontsize)
+    def __init__(self, screen:pygame.Surface, states:GameStates, subscreen_rect):
+        super().__init__(screen, states, subscreen_rect)
         self.score = states.score
 
     def update_score(self, states: GameStates):
@@ -195,3 +267,25 @@ class ScoreDisplayer(BasicDisplayer):
         self.screen.blit(score2, (width-size2[0], 0))
 
         pygame.display.flip()
+
+
+class TextHandler():
+    def __init__(self, font, fulltext, start_coords):
+        self.font = font
+        self.fulltext = fulltext
+        self.start_coords = start_coords
+
+    def get_start_positions(self):
+        start_positions = [self.start_coords]
+        first_option = self.fulltext.split(' ')[0]
+        options_dimensions = [self.font.size(first_option)]
+        options_counter = 1
+        for i in range(len(self.fulltext)):
+            if self.fulltext[i] == ' ' and self.fulltext[i+1] != ' ':
+                option = (self.fulltext[i+1:]).split(' ')[0]
+                options_counter += 1
+                x_start = self.start_coords[0] + self.font.size(self.fulltext[0:i+1])[0]
+                y_start = self.start_coords[1]
+                start_positions.append((x_start, y_start))
+                options_dimensions.append(self.font.size(option))
+        return start_positions, options_dimensions
