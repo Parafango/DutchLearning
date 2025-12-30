@@ -1,3 +1,4 @@
+from math import floor
 from typing import Tuple
 
 import pygame
@@ -391,16 +392,20 @@ class TrisCPU():
         return coords
 
     def find_optimal_slot(self, filled_slots):
-        candidate_matrix = self.find_optimal_direction(filled_slots)
-        if candidate_matrix is None:
-            coords = self.free_action(random=True)
-            return coords
+        best_coords = self.lay_trap()
+        if best_coords is not None:
+            return best_coords
+        else:
+            candidate_matrix = self.find_optimal_direction(filled_slots)
+            if candidate_matrix is None:
+                coords = self.free_action(random=True)
+                return coords
 
-        best_coords = self.pick_among_candidates(candidate_matrix)
-        #find optimal direction: return matrix with highest value in most optimal slot
-            #check only in directions with 1 o and 0 x
-            #if there is no free direction then return and do free action
-        #get most optimal slot from matrix
+            best_coords = self.pick_among_candidates(candidate_matrix)
+            #find optimal direction: return matrix with highest value in most optimal slot
+                #check only in directions with 1 o and 0 x
+                #if there is no free direction then return and do free action
+            #get most optimal slot from matrix
 
         return best_coords
 
@@ -454,3 +459,60 @@ class TrisCPU():
         #for now first choice
         best_coords = np.unravel_index(np.argmax(candidate_matrix), np.shape(candidate_matrix))
         return best_coords
+
+    def lay_trap(self):
+        #if central is o
+        #place o in corner:
+        #if x is in one corner -->priority to opposite corner
+        #else take first available corner
+        #else
+        #take one of the corners:
+        #if a corner is already o then pick closest corner
+        #else first available corner
+        central_value = self.grid.grid_values[1,1]
+        max_dim = np.size(self.grid.grid_values, axis=0) - 1
+        corner_positions = [(0,0), (0, max_dim), (max_dim, 0), (max_dim, max_dim)]
+        if central_value == -1:
+            x_pos = np.argwhere(self.grid.grid_values == 1)
+            x_pos = [tuple(x) for x in x_pos.tolist()]
+            x_in_corner = set(x_pos).intersection(set(corner_positions))
+            if len(x_in_corner) == 1:
+                x_in_corner = list(x_in_corner)[0]
+                opposite_corner = (get_opposite_index(x_in_corner[0], 3), get_opposite_index(x_in_corner[1], 3))
+                if self.grid.grid_values[opposite_corner[0], opposite_corner[1]] == 0:
+                    return opposite_corner
+                else:
+                    for corner in corner_positions:
+                        if self.grid.grid_values[corner[0], corner[1]] == 0:
+                            return corner
+            else:
+                for corner in corner_positions:
+                    if self.grid.grid_values[corner[0], corner[1]] == 0:
+                        return corner
+        else:
+            corner_copy = corner_positions.copy()
+            for corner in corner_positions:
+                if self.grid.grid_values[corner[0], corner[1]] == -1:
+                    opposite_corner = (get_opposite_index(corner[0], 3), get_opposite_index(corner[1], 3))
+                    corner_copy.remove(corner)
+                    corner_copy.remove(opposite_corner)
+
+            if corner_copy != corner_positions:
+                for corner in corner_copy:
+                    if self.grid.grid_values[corner[0], corner[1]] == 0:
+                        return corner
+            else:
+                for corner in corner_positions:
+                    if self.grid.grid_values[corner[0], corner[1]] == 0:
+                        return corner
+        return None
+
+
+def get_opposite_index(idx, len):
+    mid_idx = floor(len / 2)
+    if idx < mid_idx:
+        return (mid_idx-idx) + idx + 1
+    elif idx > mid_idx:
+        return mid_idx - (idx-mid_idx)
+    else:
+        return mid_idx
