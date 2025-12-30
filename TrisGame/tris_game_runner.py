@@ -3,7 +3,7 @@ import sys
 import pygame
 import numpy as np
 
-from TrisGame.tris_classes import BasicDisplayer, WinDisplayer, ScoreDisplayer
+from TrisGame.tris_classes import BasicDisplayer, WinDisplayer, ScoreDisplayer, TrisCPU
 from tris_classes import TrisGrid, GameStates
 import time
 
@@ -19,6 +19,7 @@ class TrisGameRunner():
         dt = 0
         grid, states = self.start_game(screen)
         score_displayer = ScoreDisplayer(screen, states, None)
+        CPU_player = TrisCPU(grid, states)
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -26,10 +27,19 @@ class TrisGameRunner():
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     self.update_grid(event, grid, states, screen)
 
+            if states.game_options.gamemode == 1 and states.determine_turn() == 'o':
+                winner = self.check_win_conditions(grid, states)
+                if winner is None:
+                    coords = CPU_player.play()
+                    grid.draw_symbol(coords, states, screen)
+                    states.turn_count += 1
+
             self.check_game_status(grid, states, screen, score_displayer)
             if states.restart_game:
                 grid = self.restart_game(screen)
                 states.reset_states()
+                CPU_player.grid = grid
+                CPU_player.states = states
 
             if states.quit_game:
                 self.quit_screen(screen, states)
@@ -107,12 +117,12 @@ class TrisGameRunner():
         p2_win_value = -3
         if (any(h_sum==p1_win_value) or any(v_sum==p1_win_value) or
                 (oblique_sum1==p1_win_value) or (oblique_sum2==p1_win_value)):
-            states.score[0] += 1
             return 1
         elif (any(h_sum == p2_win_value) or any(v_sum == p2_win_value) or
               (oblique_sum1 == p2_win_value) or (oblique_sum2 == p2_win_value)):
-            states.score[1] += 1
             return 2
+        elif self.is_game_over(grid):
+            return 'Tie'
         else:
             return None
 
@@ -156,6 +166,7 @@ class TrisGameRunner():
 
     def restart_game(self, screen: pygame.Surface):
         grid = self.paint_grid(screen)
+        grid.reset_values()
         return grid
 
     def quit_screen(self, screen: pygame.Surface, states: GameStates):
@@ -200,16 +211,15 @@ class TrisGameRunner():
                         gamemode_displayer.update_choice_screen(mode_selection_message[-1], event.key)
                     if event.key == pygame.K_RETURN:
                         if gamemode_displayer.selected_option == 0:
-                            states.game_options.gamemode = '1vs1'
+                            states.game_options.gamemode = 0
                         elif gamemode_displayer.selected_option == 1:
-                            states.game_options.gamemode = '1vsCPU'
+                            states.game_options.gamemode = 1
                         gamemode_unselected = False
-
-        #choose gamemode
-            #display choice screen
-            #interact with player through key to move selection
-            #save choice from selector_postion
 
         grid = self.paint_grid(screen)
 
         return grid, states
+
+    def is_game_over(self, grid):
+        is_game_over = np.all(grid.grid_values != 0)
+        return is_game_over

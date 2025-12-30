@@ -4,6 +4,7 @@ import pygame
 from pygame import Rect
 import numpy as np
 import sys
+from random import randint
 
 class TrisGrid(Rect):
     def __init__(self, left, bottom, width, height):
@@ -92,6 +93,7 @@ class GameStates():
         self.turn_count = 0
         self.restart_game = False
         self.replay_selector = ReplaySelector()
+        self.last_winner = None
 
 
 class ReplaySelector():
@@ -202,7 +204,13 @@ class WinDisplayer(BasicDisplayer):
         pygame.draw.rect(self.screen, color='black', rect=win_rect)
         pygame.draw.rect(self.screen, color='white', rect=win_rect, width=4)
         self.font = pygame.font.Font(None, self.fontsize)
-        win_text = [f'Player {self.states.last_winner} wins!',
+        if self.states.last_winner == 'Tie':
+            first_win_line = 'It''s a tie!'
+        else:
+            first_win_line = f'Player {self.states.last_winner} wins!'
+            self.states.score[self.states.last_winner-1] += 1
+
+        win_text = [first_win_line,
                     'Play again?',
                     'Yes    No']
         label = []
@@ -289,3 +297,160 @@ class TextHandler():
                 start_positions.append((x_start, y_start))
                 options_dimensions.append(self.font.size(option))
         return start_positions, options_dimensions
+
+class TrisCPU():
+    def __init__(self, grid: TrisGrid, states: GameStates):
+        self.grid = grid
+        self.states = states
+
+    def play(self):
+        coords = self.check_winning_condition(factor=-1) #to win
+        if coords is not None:
+            self.grid.grid_values[coords] = -1
+            return coords
+
+        coords = self.check_winning_condition(factor=1) #to block lose con
+        if coords is not None:
+            self.grid.grid_values[coords] = -1
+            return coords
+
+
+        filled_slots = self.check_any_filled_slot(factor=1)
+        if filled_slots is not None:
+            coords = self.find_optimal_slot(filled_slots)
+        else:
+            coords = self.free_action()
+        #check if any row has 1 o
+        #if yes then check if there is a free slot in any direction from it
+        #if yes then add first free slot in the direction
+        #if not then add random/first free slot
+        #if not random/first free slot
+        #otherwise attack
+        #first empty box
+        # self.states.turn_count += 1
+        self.grid.grid_values[tuple(coords)] = -1
+        return coords
+
+    def check_winning_condition(self, factor):
+        win_cond_value = 2 * factor
+        oblique_sum1 = self.grid.grid_values[0, 0] + self.grid.grid_values[1, 1] + self.grid.grid_values[2, 2]
+        oblique_sum2 = self.grid.grid_values[0, 2] + self.grid.grid_values[1, 1] + self.grid.grid_values[2, 0]
+
+        h_sum = np.sum(self.grid.grid_values, axis=1)
+        v_sum = np.sum(self.grid.grid_values, axis=0)
+
+        if oblique_sum1 == win_cond_value:
+            for i in range(3):
+                if self.grid.grid_values[i,i] == 0:
+                    coords = (i,i)
+                    return coords
+
+        if oblique_sum2 == win_cond_value:
+            for i in range(3):
+                if self.grid.grid_values[i,2-i] == 0:
+                    coords = (i,2-i)
+                    return coords
+
+        h_sum_cond = (h_sum == win_cond_value)
+        if any(h_sum_cond):
+            free_idx = np.arange(3)[h_sum_cond][0]
+            for i in range(3):
+                if self.grid.grid_values[free_idx, i] == 0:
+                    coords = (free_idx, i)
+                    return coords
+
+        v_sum_cond = (v_sum == win_cond_value)
+        if any(v_sum_cond):
+            free_idx = np.arange(3)[v_sum_cond][0]
+            for i in range(3):
+                if self.grid.grid_values[i, free_idx] == 0:
+                    coords = (i, free_idx)
+                    return coords
+
+        return None
+
+    def check_any_filled_slot(self, factor):
+        value_to_check = -1 * factor
+        filled_slots = (self.grid.grid_values == value_to_check)
+        if filled_slots.any():
+            return filled_slots
+        else:
+            return None
+
+    def free_action(self, random=False):
+        free_slots = np.argwhere(self.grid.grid_values==0)
+        if random:
+            #this gets passed if match is over anyway and choice doesn't matter
+            coords = free_slots[randint(0,len(free_slots)-1)]
+        else:
+            #in this case we can do something smart possibly
+            if self.grid.grid_values[1,1] == 0:
+                coords = (1,1)
+            else:
+                coords = free_slots[0]
+        return coords
+
+    def find_optimal_slot(self, filled_slots):
+        candidate_matrix = self.find_optimal_direction(filled_slots)
+        if candidate_matrix is None:
+            coords = self.free_action(random=True)
+            return coords
+
+        best_coords = self.pick_among_candidates(candidate_matrix)
+        #find optimal direction: return matrix with highest value in most optimal slot
+            #check only in directions with 1 o and 0 x
+            #if there is no free direction then return and do free action
+        #get most optimal slot from matrix
+
+        return best_coords
+
+    def find_optimal_direction(self, filled_slots):
+        #get coords of os
+        coords = np.argwhere(filled_slots)
+        candidate_matrix = np.zeros((3,3))
+
+        #check for each slot if any direction is free
+        for coord in coords:
+            #horizontal check
+            h_check = True
+            for i in range(3):
+                if self.grid.grid_values[coord[0], i] == 1:
+                    h_check = False
+
+            if h_check:
+                candidate_matrix[coord[0], :] += 1
+
+            #vertical check
+            v_check = True
+            for i in range(3):
+                if self.grid.grid_values[i, coord[1]] == 1:
+                    v_check = False
+
+            if v_check:
+                candidate_matrix[:, coord[1]] += 1
+
+            #oblique1 check
+            oblique_1 = [(x,x) for x in range(3)]
+            if tuple(coord) in oblique_1:
+                if np.trace(self.grid.grid_values) == -1:
+                    candidate_matrix = candidate_matrix + np.eye(3)
+
+            #oblique2 check
+            oblique_2 = [(x,2-x) for x in range(3)]
+            if tuple(coord) in oblique_2:
+                if np.trace(np.flip(self.grid.grid_values)) == -1:
+                    candidate_matrix = candidate_matrix + np.flip(np.eye(3))
+
+        #assign 0 to candidate matrix wherever filled slots is not 0
+        candidate_matrix[self.grid.grid_values != 0] = 0
+
+        #if candidate matrix is 0 everywhere (as there is not a winning stategy) then return None
+        if np.sum(candidate_matrix) == 0:
+            return None
+
+        return candidate_matrix
+
+    def pick_among_candidates(self, candidate_matrix):
+        #for now first choice
+        best_coords = np.unravel_index(np.argmax(candidate_matrix), np.shape(candidate_matrix))
+        return best_coords
