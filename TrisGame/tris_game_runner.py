@@ -105,6 +105,9 @@ class TrisGameRunner():
                             elif states.replay_selector.selected_value == 'n':
                                 states.quit_game = True
                             new_game_unselected = False
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        quit()
 
     def check_win_conditions(self, grid:TrisGrid, states: GameStates):
         oblique_sum1 = grid.grid_values[0,0] + grid.grid_values[1,1] + grid.grid_values[2,2]
@@ -215,6 +218,9 @@ class TrisGameRunner():
                         elif gamemode_displayer.selected_option == 1:
                             states.game_options.gamemode = 1
                         gamemode_unselected = False
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
 
         grid = self.paint_grid(screen)
 

@@ -59,8 +59,10 @@ class TrisGrid(Rect):
             pygame.draw.line(screen, 'white',(x_left, y_top), (x_right, y_bottom), width=4)
             pygame.draw.line(screen, 'white', (x_right, y_top), (x_left, y_bottom), width=4)
         elif states.determine_turn() == 'o':
-            radius = self.unit_size * 2/6
-            pygame.draw.circle(screen, 'white',(x_center,y_center), radius)
+            outer_radius = self.unit_size * 2/6
+            inner_radius = self.unit_size * 7/24
+            pygame.draw.circle(screen, 'white',(x_center,y_center), outer_radius)
+            pygame.draw.circle(screen, 'black',(x_center,y_center), inner_radius)
         else:
             sys.exit('Something went wrong')
         pygame.display.flip()
@@ -485,6 +487,11 @@ class TrisCPU():
                     for corner in corner_positions:
                         if self.grid.grid_values[corner[0], corner[1]] == 0:
                             return corner
+            elif len(x_in_corner) == 2:
+                unfilled_slots = np.argwhere(self.grid.grid_values == 0)
+                unfilled_slots = set(tuple(x) for x in unfilled_slots.tolist())
+                pos_to_iter = unfilled_slots - set(corner_positions)
+                return list(pos_to_iter)[0]
             else:
                 for corner in corner_positions:
                     if self.grid.grid_values[corner[0], corner[1]] == 0:
