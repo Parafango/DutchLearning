@@ -23,3 +23,12 @@ to add:
         - se 2 caselle prese --> cercare di vincere
     - altrimenti (v2):
         - v1 + trappole
+
+per torneo di tris:
+    - (pulire logica CPU)
+        - rifare logica in base alle trappole
+    - adattare logica computer per non essere dipendente dal tipo di giocatore
+    - creare logica per attacco
+    - cambia giocatore che inizia il round a fine round (penso solo turno+1)
+    - creare modalità CPUvsCPU e salva risultati in db?
+    - far combattere le due versioni di CPU

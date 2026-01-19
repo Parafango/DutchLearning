@@ -394,7 +394,7 @@ class TrisCPU():
         return coords
 
     def find_optimal_slot(self, filled_slots):
-        best_coords = self.lay_trap()
+        best_coords = self.detect_and_handle_traps()
         if best_coords is not None:
             return best_coords
         else:
@@ -462,7 +462,7 @@ class TrisCPU():
         best_coords = np.unravel_index(np.argmax(candidate_matrix), np.shape(candidate_matrix))
         return best_coords
 
-    def lay_trap(self):
+    def detect_and_handle_traps(self):
         #if central is o
         #place o in corner:
         #if x is in one corner -->priority to opposite corner
@@ -516,14 +516,9 @@ class TrisCPU():
                     corner_copy.remove(corner)
                     corner_copy.remove(opposite_corner)
 
-            if corner_copy != corner_positions:
-                for corner in corner_copy:
-                    if self.grid.grid_values[corner[0], corner[1]] == 0:
-                        return corner
-            else:
-                for corner in corner_positions:
-                    if self.grid.grid_values[corner[0], corner[1]] == 0:
-                        return corner
+            for corner in corner_copy:
+                if self.grid.grid_values[corner[0], corner[1]] == 0:
+                    return corner
         return None
 
 
