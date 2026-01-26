@@ -468,6 +468,17 @@ class TrisCPU():
         return best_coords
 
     def traps_logic(self):
+        if self.is_second:
+            #defense
+            coords = self.detect_and_handle_traps()
+
+        if not self.is_second or coords is None:
+            #attack
+            coords = self.free_action(random=True)
+
+        return coords
+
+    def detect_and_handle_traps(self):
         #if central is o
         #place o in corner:
         #if x is in one corner -->priority to opposite corner
