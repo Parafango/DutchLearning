@@ -306,20 +306,25 @@ class TrisCPU():
     def __init__(self, grid: TrisGrid, states: GameStates):
         self.grid = grid
         self.states = states
+        self.is_second = 1
+        self.player_value = -1
+        self.adversary_value = None
+        self.trap_style = None
+        self.get_adversary_value()
 
     def play(self):
         coords = self.check_winning_condition(factor=-1) #to win
         if coords is not None:
-            self.grid.grid_values[coords] = -1
+            self.grid.grid_values[coords] = self.player_value
             return coords
 
         coords = self.check_winning_condition(factor=1) #to block lose con
         if coords is not None:
-            self.grid.grid_values[coords] = -1
+            self.grid.grid_values[coords] = self.player_value
             return coords
 
 
-        filled_slots = self.check_any_filled_slot(factor=1)
+        filled_slots = self.check_any_filled_slot()
         if filled_slots is not None:
             coords = self.find_optimal_slot(filled_slots)
         else:
@@ -331,12 +336,11 @@ class TrisCPU():
         #if not random/first free slot
         #otherwise attack
         #first empty box
-        # self.states.turn_count += 1
-        self.grid.grid_values[tuple(coords)] = -1
+        self.grid.grid_values[tuple(coords)] = self.player_value
         return coords
 
     def check_winning_condition(self, factor):
-        win_cond_value = 2 * factor
+        win_cond_value = 2 * self.adversary_value * factor
         oblique_sum1 = self.grid.grid_values[0, 0] + self.grid.grid_values[1, 1] + self.grid.grid_values[2, 2]
         oblique_sum2 = self.grid.grid_values[0, 2] + self.grid.grid_values[1, 1] + self.grid.grid_values[2, 0]
 
@@ -373,8 +377,8 @@ class TrisCPU():
 
         return None
 
-    def check_any_filled_slot(self, factor):
-        value_to_check = -1 * factor
+    def check_any_filled_slot(self):
+        value_to_check = self.player_value
         filled_slots = (self.grid.grid_values == value_to_check)
         if filled_slots.any():
             return filled_slots
@@ -395,7 +399,7 @@ class TrisCPU():
         return coords
 
     def find_optimal_slot(self, filled_slots):
-        best_coords = self.detect_and_handle_traps()
+        best_coords = self.traps_logic()
         if best_coords is not None:
             return best_coords
         else:
@@ -422,7 +426,7 @@ class TrisCPU():
             #horizontal check
             h_check = True
             for i in range(3):
-                if self.grid.grid_values[coord[0], i] == 1:
+                if self.grid.grid_values[coord[0], i] == self.adversary_value:
                     h_check = False
 
             if h_check:
@@ -431,7 +435,7 @@ class TrisCPU():
             #vertical check
             v_check = True
             for i in range(3):
-                if self.grid.grid_values[i, coord[1]] == 1:
+                if self.grid.grid_values[i, coord[1]] == self.adversary_value:
                     v_check = False
 
             if v_check:
@@ -440,13 +444,13 @@ class TrisCPU():
             #oblique1 check
             oblique_1 = [(x,x) for x in range(3)]
             if tuple(coord) in oblique_1:
-                if np.trace(self.grid.grid_values) == -1:
+                if np.trace(self.grid.grid_values) == self.player_value:
                     candidate_matrix = candidate_matrix + np.eye(3)
 
             #oblique2 check
             oblique_2 = [(x,2-x) for x in range(3)]
             if tuple(coord) in oblique_2:
-                if np.trace(np.flip(self.grid.grid_values)) == -1:
+                if np.trace(np.flip(self.grid.grid_values)) == self.player_value:
                     candidate_matrix = candidate_matrix + np.flip(np.eye(3))
 
         #assign 0 to candidate matrix wherever filled slots is not 0
@@ -463,7 +467,7 @@ class TrisCPU():
         best_coords = np.unravel_index(np.argmax(candidate_matrix), np.shape(candidate_matrix))
         return best_coords
 
-    def detect_and_handle_traps(self):
+    def traps_logic(self):
         #if central is o
         #place o in corner:
         #if x is in one corner -->priority to opposite corner
@@ -475,8 +479,8 @@ class TrisCPU():
         central_value = self.grid.grid_values[1,1]
         max_dim = np.size(self.grid.grid_values, axis=0) - 1
         corner_positions = [(0,0), (0, max_dim), (max_dim, 0), (max_dim, max_dim)]
-        if central_value == -1:
-            x_pos = np.argwhere(self.grid.grid_values == 1)
+        if central_value == self.player_value:
+            x_pos = np.argwhere(self.grid.grid_values == self.adversary_value)
             x_pos = [tuple(x) for x in x_pos.tolist()]
             x_in_corner = set(x_pos).intersection(set(corner_positions))
             if len(x_in_corner) == 1:
@@ -494,12 +498,13 @@ class TrisCPU():
                 pos_to_iter = unfilled_slots - set(corner_positions)
                 return list(pos_to_iter)[0]
             else:
-                cross_positions = [(0,1), (1,2), (2,1), (1,0)]
-                for i in range(len(cross_positions)):
-                    cross_pos1 = cross_positions[reset_index_to_range(i, len(cross_positions))]
-                    cross_pos2 = cross_positions[reset_index_to_range(i+1, len(cross_positions))]
+                cross_positions = [(0, 1), (1, 2), (2, 1), (1, 0), (0, 1)]
+                for i in range(len(cross_positions) - 1):
+                    cross_pos1 = cross_positions[i]
+                    cross_pos2 = cross_positions[i + 1]
 
-                    if self.grid.grid_values[cross_pos1[0], cross_pos1[1]] == 1 and self.grid.grid_values[cross_pos2[0], cross_pos2[1]] == 1:
+                    if (self.grid.grid_values[cross_pos1[0], cross_pos1[1]] == self.adversary_value and
+                            self.grid.grid_values[cross_pos2[0], cross_pos2[1]] == self.adversary_value):
                         corner_from_cross = get_corner_from_neighbouring_slots(cross_pos1, cross_pos2)
                         if self.grid.grid_values[corner_from_cross[0], corner_from_cross[1]] == 0:
                             return corner_from_cross
@@ -512,7 +517,7 @@ class TrisCPU():
         else:
             corner_copy = corner_positions.copy()
             for corner in corner_positions:
-                if self.grid.grid_values[corner[0], corner[1]] == -1:
+                if self.grid.grid_values[corner[0], corner[1]] == self.player_value:
                     opposite_corner = (get_opposite_index(corner[0], 3), get_opposite_index(corner[1], 3))
                     corner_copy.remove(corner)
                     corner_copy.remove(opposite_corner)
@@ -521,3 +526,9 @@ class TrisCPU():
                 if self.grid.grid_values[corner[0], corner[1]] == 0:
                     return corner
         return None
+
+    def get_adversary_value(self):
+        if self.player_value == -1:
+            self.adversary_value = 1
+        elif self.player_value == 1:
+            self.adversary_value = -1
