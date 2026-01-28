@@ -117,6 +117,20 @@ class ImprovedCPU(TrisCPU):
                 available_directions = check_coords_in_grid(self.grid.grid_values, slots_to_check)
                 if len(available_directions) == 2:
                     return corner_in_between
+            elif self.grid.grid_values[corner_in_between] == self.adversary_value:
+                if self.grid.grid_values[1,1] == 0:
+                    #if two direction are free and center is free then get center to trap adv
+                    directions = [(owned_crosses[0][0] - 1, owned_crosses[0][1] - 1),
+                                  (owned_crosses[1][0] - 1, owned_crosses[1][1] - 1)]
+                    slots_to_check = []
+                    for i, direction in enumerate(directions):
+                        slots_to_check.append(
+                            (owned_crosses[i][0] - direction[i][0], owned_crosses[i][1] - direction[i][0]))
+
+                    available_directions = check_coords_in_grid(self.grid.grid_values, slots_to_check)
+                    if len(available_directions) == 2:
+                        center_coords = (1,1)
+                        return center_coords
 
         return None
 
