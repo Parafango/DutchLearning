@@ -86,9 +86,10 @@ class GameStates():
         self.quit_game = False
         self.last_winner = None
         self.game_options = GameOptions()
+        self.rounds_played = 0
 
     def determine_turn(self):
-        if self.turn_count % 2 == 0:
+        if (self.turn_count + self.rounds_played) % 2 == 0:
             return 'x'
         else:
             return 'o'
@@ -99,6 +100,8 @@ class GameStates():
         self.replay_selector = ReplaySelector()
         self.last_winner = None
 
+    def increment_round(self):
+        self.rounds_played += 1
 
 class ReplaySelector():
     def __init__(self):
@@ -303,11 +306,11 @@ class TextHandler():
         return start_positions, options_dimensions
 
 class TrisCPU():
-    def __init__(self, grid: TrisGrid, states: GameStates):
+    def __init__(self, grid: TrisGrid, states: GameStates, initial_player_value = -1, starts_second=True):
         self.grid = grid
         self.states = states
-        self.is_second = 1
-        self.player_value = -1
+        self.is_second = starts_second
+        self.player_value = initial_player_value
         self.adversary_value = None
         self.trap_style = None
         self.get_adversary_value()
@@ -325,10 +328,9 @@ class TrisCPU():
 
 
         filled_slots = self.check_any_filled_slot()
-        if filled_slots is not None:
-            coords = self.find_optimal_slot(filled_slots)
-        else:
-            coords = self.free_action()
+
+        coords = self.find_optimal_slot(filled_slots)
+
         #check if any row has 1 o
         #if yes then check if there is a free slot in any direction from it
         #if yes then add first free slot in the direction
@@ -380,10 +382,7 @@ class TrisCPU():
     def check_any_filled_slot(self):
         value_to_check = self.player_value
         filled_slots = (self.grid.grid_values == value_to_check)
-        if filled_slots.any():
-            return filled_slots
-        else:
-            return None
+        return filled_slots
 
     def free_action(self, random=False):
         free_slots = np.argwhere(self.grid.grid_values==0)
@@ -525,7 +524,7 @@ class TrisCPU():
                 for corner in corner_positions:
                     if self.grid.grid_values[corner[0], corner[1]] == 0:
                         return corner
-        else:
+        elif central_value == self.adversary_value:
             corner_copy = corner_positions.copy()
             for corner in corner_positions:
                 if self.grid.grid_values[corner[0], corner[1]] == self.player_value:
@@ -536,10 +535,13 @@ class TrisCPU():
             for corner in corner_copy:
                 if self.grid.grid_values[corner[0], corner[1]] == 0:
                     return corner
+        else:
+            center_coords = (1, 1)
+            return center_coords
         return None
 
     def get_adversary_value(self):
-        if self.player_value == -1:
-            self.adversary_value = 1
-        elif self.player_value == 1:
-            self.adversary_value = -1
+        self.adversary_value = -self.player_value
+
+    def change_turn_order(self):
+        self.is_second = not self.is_second

@@ -38,6 +38,8 @@ class TrisGameRunner():
             if states.restart_game:
                 grid = self.restart_game(screen)
                 states.reset_states()
+                states.increment_round()
+                CPU_player.change_turn_order()
                 CPU_player.grid = grid
                 CPU_player.states = states
 
